@@ -1,13 +1,16 @@
+import { IsArray, IsString } from 'class-validator';
+import { CatsWallpapers } from '.';
 import {
   BeforeInsert,
   BeforeUpdate,
   Column,
   Entity,
+  OneToMany,
   PrimaryGeneratedColumn,
 } from 'typeorm';
 
 @Entity()
-export default class Cat {
+export class Cat {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
@@ -35,7 +38,15 @@ export default class Cat {
   @Column({ type: 'text', unique: true })
   moniker: string;
 
-  @Column({ type: 'bool' })
+  //* Add Images
+  @OneToMany(
+    () => CatsWallpapers,
+    (catsWallpapers) => catsWallpapers.purrfectPics,
+    { cascade: true, eager: true },
+  )
+  images?: CatsWallpapers[];
+
+  @Column({ type: 'bool', default: true })
   status: boolean;
 
   //! Creando un procedimiento antes de la inserción a la DB

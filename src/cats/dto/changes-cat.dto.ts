@@ -1,4 +1,5 @@
 import {
+  IsArray,
   IsBoolean,
   IsIn,
   IsNumber,
@@ -40,6 +41,12 @@ export class CatsDto {
   @IsOptional()
   moniker?: string;
 
+  @IsString({ each: true })
+  @IsArray()
+  @IsOptional()
+  images?: string[];
+
   @IsBoolean()
+  @IsOptional()
   status: boolean;
 }

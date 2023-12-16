@@ -13,7 +13,8 @@ import { Repository } from 'typeorm';
 import { PaginationDto } from 'src/common/dtos/pagination.dto';
 
 import { validate as isUUID } from 'uuid';
-import Cat from './entities/cat.entity';
+
+import { Cat, CatsWallpapers } from './entities';
 
 @Injectable()
 export class CatsService {
@@ -23,22 +24,40 @@ export class CatsService {
   constructor(
     @InjectRepository(Cat)
     private readonly catRepository: Repository<Cat>,
+
+    @InjectRepository(CatsWallpapers)
+    private readonly catImageRepository: Repository<CatsWallpapers>,
   ) {}
 
   async create(createCatDto: CreateCatDto) {
     try {
       // ? Que apodo le pondras a tu gato, ¿Te ayudo?😉
-      const cat = this.catRepository.create(createCatDto);
+      const { images = [], ...myCats } = createCatDto;
+
+      const cat = this.catRepository.create({
+        ...myCats,
+        images: images.map((image) =>
+          this.catImageRepository.create({ url: image }),
+        ),
+      });
       await this.catRepository.save(cat);
-      return cat;
+      return { ...cat, images };
     } catch (err) {
       this.michisHandleExceptions(err);
     }
   }
 
   // Todo: Pagination
-  findAll({ limit = 10, offset = 0 }: PaginationDto) {
-    return this.catRepository.find({ take: limit, skip: offset });
+  async findAll({ limit = 10, offset = 0 }: PaginationDto) {
+    const cats = await this.catRepository.find({
+      take: limit,
+      skip: offset,
+      relations: { images: true },
+    });
+    return cats.map(({ images, ...more }) => ({
+      ...more,
+      images: images.map((url) => url),
+    }));
   }
 
   async findOne(term: string) {
@@ -47,7 +66,7 @@ export class CatsService {
     if (isUUID(term)) {
       cat = await this.catRepository.findOneBy({ id: term });
     } else {
-      const query = this.catRepository.createQueryBuilder();
+      const query = this.catRepository.createQueryBuilder('minino');
       cat = await query
         .where(
           'LOWER(gender) =:gender or LOWER(size) =:size or LOWER(breed) =:breed',
@@ -57,6 +76,7 @@ export class CatsService {
             breed: term.toLowerCase(),
           },
         )
+        .leftJoinAndSelect('minino.images', 'mycat')
         .getOne();
     }
 
@@ -65,7 +85,11 @@ export class CatsService {
   }
 
   async update(id: string, updatecatdto: UpdateCatDto) {
-    const cat = await this.catRepository.preload({ id, ...updatecatdto });
+    const cat = await this.catRepository.preload({
+      id,
+      ...updatecatdto,
+      images: [],
+    });
     if (!cat)
       throw new NotFoundException(
         `I can't find this kitten with id ${id}...🐈`,

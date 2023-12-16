@@ -10,5 +10,6 @@ export class CreateCatDto extends PickType(CatsDto, [
   'personality',
   'info',
   'moniker',
+  'images',
   'status',
 ]) {}
