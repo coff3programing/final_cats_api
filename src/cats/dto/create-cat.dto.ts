@@ -1,7 +1,7 @@
 import { PickType } from '@nestjs/mapped-types';
-import { CatsDto } from './changes-cat.dto';
+import { DataCatsDto } from './changes.dto';
 
-export class CreateCatDto extends PickType(CatsDto, [
+export class CreateCatDto extends PickType(DataCatsDto, [
   'name',
   'gender',
   'size',

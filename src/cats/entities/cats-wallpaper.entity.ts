@@ -9,6 +9,6 @@ export class CatsWallpapers {
   @Column('text')
   url: string;
 
-  @ManyToOne(() => Cat, (cat) => cat.images)
-  purrfectPics: Cat;
+  @ManyToOne(() => Cat, (cat) => cat.images, { onDelete: 'CASCADE' })
+  purrfectpics: Cat;
 }

@@ -8,5 +8,6 @@ import { Cat, CatsWallpapers } from './entities';
   controllers: [CatsController],
   providers: [CatsService],
   imports: [TypeOrmModule.forFeature([Cat, CatsWallpapers])],
+  exports: [CatsService],
 })
 export class CatsModule {}

@@ -5,16 +5,15 @@ import {
   Logger,
   NotFoundException,
 } from '@nestjs/common';
-import { CreateCatDto } from './dto/create-cat.dto';
-import { UpdateCatDto } from './dto/update-cat.dto';
+
 import { InjectRepository } from '@nestjs/typeorm';
-
-import { Repository } from 'typeorm';
-import { PaginationDto } from 'src/common/dtos/pagination.dto';
-
 import { validate as isUUID } from 'uuid';
 
+import { DataSource, Repository } from 'typeorm';
+import { PaginationDto } from 'src/common/dtos/pagination.dto';
+
 import { Cat, CatsWallpapers } from './entities';
+import { CreateCatDto, UpdateCatDto } from './dto';
 
 @Injectable()
 export class CatsService {
@@ -27,19 +26,20 @@ export class CatsService {
 
     @InjectRepository(CatsWallpapers)
     private readonly catImageRepository: Repository<CatsWallpapers>,
+
+    private readonly dataSource: DataSource,
   ) {}
 
   async create(createCatDto: CreateCatDto) {
     try {
       // ? Que apodo le pondras a tu gato, ¿Te ayudo?😉
-      const { images = [], ...myCats } = createCatDto;
-
-      const cat = this.catRepository.create({
-        ...myCats,
-        images: images.map((image) =>
-          this.catImageRepository.create({ url: image }),
-        ),
-      });
+      const { images = [], ...myCats } = createCatDto,
+        cat = this.catRepository.create({
+          ...myCats,
+          images: images.map((image) =>
+            this.catImageRepository.create({ url: image }),
+          ),
+        });
       await this.catRepository.save(cat);
       return { ...cat, images };
     } catch (err) {
@@ -84,21 +84,44 @@ export class CatsService {
     return cat;
   }
 
+  // * Optimizando y aplanando las busquedas
+  async findOnePlain(term: string) {
+    const { images = [], ...more } = await this.findOne(term);
+    return { ...more, images: images.map((url) => url) };
+  }
+
   async update(id: string, updatecatdto: UpdateCatDto) {
-    const cat = await this.catRepository.preload({
-      id,
-      ...updatecatdto,
-      images: [],
-    });
+    const { images, ...toUpdate } = updatecatdto,
+      cat = await this.catRepository.preload({ id, ...toUpdate });
+
     if (!cat)
       throw new NotFoundException(
         `I can't find this kitten with id ${id}...🐈`,
       );
 
+    const query = this.dataSource.createQueryRunner(); //SQL transactions
+    await query.connect();
+    await query.startTransaction();
+
     try {
-      await this.catRepository.save(cat);
-      return cat;
+      if (images) {
+        await query.manager.delete(CatsWallpapers, { purrfectpics: { id } });
+
+        cat.images = images.map((url) =>
+          this.catImageRepository.create({ url }),
+        );
+      }
+
+      await query.manager.save(cat);
+
+      await query.commitTransaction();
+      await query.release();
+
+      return this.findOnePlain(id);
     } catch (err) {
+      await query.rollbackTransaction();
+      await query.release();
+
       this.michisHandleExceptions(err);
     }
   }
@@ -115,5 +138,15 @@ export class CatsService {
     throw new InternalServerErrorException(
       '🙈Unexpected error, please verify your code or logs😾',
     );
+  }
+
+  async PurrPurge() {
+    const query = this.catRepository.createQueryBuilder();
+
+    try {
+      return await query.delete().where({}).execute();
+    } catch (err) {
+      this.michisHandleExceptions(err);
+    }
   }
 }

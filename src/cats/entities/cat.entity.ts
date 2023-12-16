@@ -1,4 +1,3 @@
-import { IsArray, IsString } from 'class-validator';
 import { CatsWallpapers } from '.';
 import {
   BeforeInsert,
@@ -14,7 +13,7 @@ export class Cat {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column({ type: 'text', unique: true })
+  @Column({ type: 'text' })
   name: string;
 
   @Column({ type: 'text' })
@@ -35,13 +34,13 @@ export class Cat {
   @Column({ type: 'text', nullable: true })
   info: string;
 
-  @Column({ type: 'text', unique: true })
+  @Column({ type: 'text' })
   moniker: string;
 
   //* Add Images
   @OneToMany(
     () => CatsWallpapers,
-    (catsWallpapers) => catsWallpapers.purrfectPics,
+    (catsWallpapers) => catsWallpapers.purrfectpics,
     { cascade: true, eager: true },
   )
   images?: CatsWallpapers[];
