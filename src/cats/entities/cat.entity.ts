@@ -1,32 +1,38 @@
-import { BeforeInsert, Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
+import {
+  BeforeInsert,
+  BeforeUpdate,
+  Column,
+  Entity,
+  PrimaryGeneratedColumn,
+} from 'typeorm';
 
 @Entity()
-export class Cat {
+export default class Cat {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
   @Column({ type: 'text', unique: true })
   name: string;
 
-  @Column({ type: 'text', nullable: false })
+  @Column({ type: 'text' })
   gender: string;
 
-  @Column({ type: 'text', nullable: false })
+  @Column({ type: 'text' })
   size: string;
 
-  @Column({ type: 'text', nullable: false })
+  @Column({ type: 'text' })
   breed: string;
 
-  @Column({ type: 'float', default: 0 })
+  @Column({ type: 'numeric', default: 0 })
   age: number;
 
-  @Column('text')
+  @Column({ type: 'text' })
   personality: string;
 
-  @Column({ type: 'text' })
+  @Column({ type: 'text', nullable: true })
   info: string;
 
-  @Column({ type: 'text', nullable: true, unique: true })
+  @Column({ type: 'text', unique: true })
   moniker: string;
 
   @Column({ type: 'bool' })
@@ -34,9 +40,17 @@ export class Cat {
 
   //! Creando un procedimiento antes de la inserción a la DB
   @BeforeInsert()
-  checkMonikerInsert() {
+  catsCheckInserts() {
     this.moniker ??= this.name;
 
+    this.moniker = this.moniker
+      .toLowerCase()
+      .replaceAll(' ', '_')
+      .replaceAll("'", '');
+  }
+
+  @BeforeUpdate()
+  catsCheckUpdate() {
     this.moniker = this.moniker
       .toLowerCase()
       .replaceAll(' ', '_')

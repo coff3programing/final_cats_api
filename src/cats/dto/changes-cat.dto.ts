@@ -8,7 +8,7 @@ import {
   MinLength,
 } from 'class-validator';
 
-export class DataCatsDto {
+export class CatsDto {
   @IsString()
   @MinLength(2)
   name: string;
@@ -16,12 +16,12 @@ export class DataCatsDto {
   @IsIn(['macho', 'hembra'])
   gender: string;
 
-  @IsIn(['pequeño', 'mediano', 'grande'])
+  @IsIn(['chico', 'mediano', 'grande'])
   size: string;
 
   @IsString()
   @IsOptional()
-  breed: string;
+  breed?: string;
 
   @IsNumber()
   @IsPositive()
@@ -41,6 +41,5 @@ export class DataCatsDto {
   moniker?: string;
 
   @IsBoolean()
-  @IsOptional()
-  status?: boolean;
+  status: boolean;
 }

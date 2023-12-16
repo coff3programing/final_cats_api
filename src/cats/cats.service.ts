@@ -3,12 +3,17 @@ import {
   Injectable,
   InternalServerErrorException,
   Logger,
+  NotFoundException,
 } from '@nestjs/common';
 import { CreateCatDto } from './dto/create-cat.dto';
 import { UpdateCatDto } from './dto/update-cat.dto';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Cat } from './entities/cat.entity';
+
 import { Repository } from 'typeorm';
+import { PaginationDto } from 'src/common/dtos/pagination.dto';
+
+import { validate as isUUID } from 'uuid';
+import Cat from './entities/cat.entity';
 
 @Injectable()
 export class CatsService {
@@ -31,20 +36,52 @@ export class CatsService {
     }
   }
 
-  findAll() {
-    return `This action returns all cats`;
+  // Todo: Pagination
+  findAll({ limit = 10, offset = 0 }: PaginationDto) {
+    return this.catRepository.find({ take: limit, skip: offset });
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} cat`;
+  async findOne(term: string) {
+    let cat: Cat;
+
+    if (isUUID(term)) {
+      cat = await this.catRepository.findOneBy({ id: term });
+    } else {
+      const query = this.catRepository.createQueryBuilder();
+      cat = await query
+        .where(
+          'LOWER(gender) =:gender or LOWER(size) =:size or LOWER(breed) =:breed',
+          {
+            gender: term.toLowerCase(),
+            size: term.toLowerCase(),
+            breed: term.toLowerCase(),
+          },
+        )
+        .getOne();
+    }
+
+    if (!cat) throw new NotFoundException(`Cat with ${term} not found`);
+    return cat;
   }
 
-  update(id: number, updateCatDto: UpdateCatDto) {
-    return `This action updates a #${id} cat`;
+  async update(id: string, updatecatdto: UpdateCatDto) {
+    const cat = await this.catRepository.preload({ id, ...updatecatdto });
+    if (!cat)
+      throw new NotFoundException(
+        `I can't find this kitten with id ${id}...🐈`,
+      );
+
+    try {
+      await this.catRepository.save(cat);
+      return cat;
+    } catch (err) {
+      this.michisHandleExceptions(err);
+    }
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} cat`;
+  async remove(id: string) {
+    const cat = await this.findOne(id);
+    await this.catRepository.remove(cat);
   }
 
   //* Manejando errores
@@ -52,7 +89,7 @@ export class CatsService {
     if (err.code === '500') throw new BadRequestException(err.detail);
     this.logger.error(err);
     throw new InternalServerErrorException(
-      'Unexpected error, please verify your code or logs😾',
+      '🙈Unexpected error, please verify your code or logs😾',
     );
   }
 }
