@@ -69,11 +69,12 @@ export class CatsService {
       const query = this.catRepository.createQueryBuilder('minino');
       cat = await query
         .where(
-          'LOWER(gender) =:gender or LOWER(size) =:size or LOWER(breed) =:breed',
+          'LOWER(gender) =:gender or LOWER(size) =:size or LOWER(breed) =:breed or LOWER(name) =:name',
           {
             gender: term.toLowerCase(),
             size: term.toLowerCase(),
             breed: term.toLowerCase(),
+            name: term.toLowerCase(),
           },
         )
         .leftJoinAndSelect('minino.images', 'mycat')
