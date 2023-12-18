@@ -76,7 +76,7 @@ Descubre encantadores endpoints para interactuar con nuestros gatitos:
 
 ## Documentación API Interactiva
 
-¡Explora más detalles y realiza pruebas interactivas en nuestra [documentación en vivo](http://localhost:3000/api/docs/)!
+¡Explora más detalles y realiza pruebas interactivas en nuestra [documentación en vivo]('')!
 
 ![Michi Navideño](https://c0.wallpaperflare.com/preview/755/291/651/nice-cat-animal-portrait.jpg)
 
